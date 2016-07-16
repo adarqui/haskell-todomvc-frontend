@@ -1,3 +1,3 @@
-# todomvc-react-flux
+# haskell-todomvc-frontend
 
-TodoMVC using react-flux.
+TodoMVC frontends for haskell-todomvc-backend. Initially implemented using react-flux.
