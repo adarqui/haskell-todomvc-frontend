@@ -29,5 +29,5 @@ reactFluxMain = do
     ()        -- props
               -- ()
               --
-  executeAction
+  executeAction $
     SomeStoreAction todoStore TodosList -- SomeStoreAction
