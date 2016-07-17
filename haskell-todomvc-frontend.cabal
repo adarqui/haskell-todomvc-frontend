@@ -27,6 +27,7 @@ library
                      , haskell-todomvc-backend
                      , react-flux == 1.1.1
                      , react-flux-router
+                     , safe
                      , text
                      , transformers
   if impl(ghcjs)

@@ -17,7 +17,7 @@ import           Web.TodoMVC.Frontend.ReactFlux.TodoComponent
 import           Web.TodoMVC.Frontend.ReactFlux.TodoDispatcher
 import           Web.TodoMVC.Frontend.ReactFlux.TodoStore
 
-import           Web.TodoMVC.Backend.Pure.Todo.Types           (TodoResponse (..),
+import           Web.TodoMVC.Backend.Pure.Todo.Types           (TodoRequest (..), TodoResponse (..),
                                                                 TodoState (..), TodoState (Completed))
 
 
@@ -124,7 +124,7 @@ mainSection_ TodoStore{..} = section_ ["id" $= "main"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
         [ "type" $= "checkbox"
         , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
-        , onChange $ \_ -> dispatchTodo ToggleAllComplete
+        , onChange $ \_ -> dispatchTodo TodosToggleAllComplete
         ]
 
     ul_ [ "id" $= "todo-list" ] $ mapM_ todoItem_ $ Map.elems tsTodos
@@ -187,7 +187,7 @@ todoItem =
                 { tiaId          = Nothing
                 , tiaClass       = "edit"
                 , tiaPlaceholder = ""
-                , tiaOnSave      = dispatchTodo . UpdateText _todoResponseId
+                , tiaOnSave      = dispatchTodo . \input_text -> TodoUpdate _todoResponseId (TodoRequest input_text _todoResponseState)
                 , tiaValue       = Just _todoResponseTitle
                 }
 
@@ -244,7 +244,7 @@ todoFooter =
 
             when (completed > 0) $ do
                 button_ [ "id" $= "clear-completed"
-                        , onClick $ \_ _ -> dispatchTodo ClearCompletedTodos
+                        , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
                         ] $
                     elemString $ "Clear completed (" ++ show completed ++ ")"
 

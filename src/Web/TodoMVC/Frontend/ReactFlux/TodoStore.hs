@@ -1,26 +1,32 @@
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Web.TodoMVC.Frontend.ReactFlux.TodoStore where
 
 
 
-import Control.Monad.IO.Class (liftIO)
-import Data.Monoid ((<>))
+import Safe (headMay)
+import Control.Monad (forM_)
 import           Control.DeepSeq
+import           Control.Monad.IO.Class              (liftIO)
 import           Data.Map                            (Map)
 import qualified Data.Map                            as Map
+import           Data.Monoid                         ((<>))
 import           Data.Text                           (Text)
 import qualified Data.Text                           as Text
 import           Data.Typeable                       (Typeable)
 import           GHC.Generics                        (Generic)
 import           React.Flux
-import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoState(..), TodoRequest (..), TodoResponse (..), TodoResponses)
+import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoRequest (..),
+                                                      TodoResponse (..),
+                                                      TodoResponses,
+                                                      TodoState (..),
+                                                      todoResponseToRequest, flipTodoState)
 
 
 
@@ -33,22 +39,30 @@ data TodoStore = TodoStore {
 
 data TodoAction
   = TodosList
-  | TodoCreate          Text
-  | TodoDelete          TodoId
-  | TodoEdit            TodoId
-  | UpdateText          TodoId Text
-  | ToggleAllComplete
-  | TodoSetComplete     TodoId Bool
-  | ClearCompletedTodos
-  | SetTodos            TodoResponses
-  | AddTodo             (Maybe TodoResponse)
-  | DeleteTodo          TodoId
+  | TodoCreate             Text
+  | TodoDelete             TodoId
+  | TodoEdit               TodoId
+  | TodoUpdate             TodoId TodoRequest
+  | TodosToggleAllComplete
+  | TodoSetComplete        TodoId Bool
+  | TodosClearCompleted
+  | Internal_SetTodos      TodoResponses
+  | Internal_AddTodo       (Maybe TodoResponse)
+  | Internal_DeleteTodo    TodoId
   | Nop
   deriving (Show, Typeable, Generic, NFData)
 
 
 
 -- transform :: StoreAction storeData -> storeData -> IO storeData
+--
+-- jsonAjax :: (ToJSON body, FromJSON response)
+--          => Text -- ^ the method
+--          -> Text -- ^ the URI
+--          -> [(Text, Text)] -- ^ the headers.  In addition to these headers, 'jsonAjax' adds two headers:
+--                            -- @Content-Type: application/json@ and @Accept: application/json@.
+--          -> body -- ^ the body
+--          -> (Either (Int, Text) response -> IO [SomeStoreAction])
 --
 instance StoreData TodoStore where
   type StoreAction TodoStore = TodoAction
@@ -60,47 +74,77 @@ instance StoreData TodoStore where
     -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
     -- For more, see the "Performance" section of the React.Flux haddocks.
     st' <- case action of
-      TodosList         -> do
-                          jsonAjax "GET" "/todos" [] () $ \case
-                            Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
-                            Right todos   -> pure [SomeStoreAction todoStore $ SetTodos todos]
-                          pure st
-      (TodoCreate txt) -> do -- st { tsTodos = (maximum (map fst todos) + 1, Todo txt False False) : todos }
-                          jsonAjax "POST" "/todos" [] (TodoRequest txt Active) $ \case
-                            Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
-                            Right m_todo  -> pure [SomeStoreAction todoStore $ AddTodo m_todo]
-                          pure st
-      (TodoDelete i)   -> do -- TodoStore (filter ((/=i) . fst) todos) currentTodo
-                          jsonAjax "DELETE" ("/todos/" <> (Text.pack $ show i)) [] () $ \case
-                            Left (_, msg)        -> pure [SomeStoreAction todoStore Nop]
-                            Right (bool :: Bool) -> pure [SomeStoreAction todoStore $ DeleteTodo i]
-                          pure st
-      (TodoEdit i)     -> do -- TodoStore todos (Just i)
-                          jsonAjax "DELETE" ("/todos/" <> (Text.pack $ show i)) [] () $ \case
-                            Left (_, msg)        -> pure [SomeStoreAction todoStore Nop]
-                            Right (bool :: Bool) -> pure [SomeStoreAction todoStore $ DeleteTodo i]
-                          pure st
---      (UpdateText newIdx newTxt) -> do
---                                    pure st
---          let f (idx, todo) | idx == newIdx = (idx, todo { todoText = newTxt, todoIsEditing = False })
---              f p = p
---           in map f todos
-      ToggleAllComplete          -> do -- [ (idx, Todo txt True False) | (idx, Todo txt _ _) <- todos ]
-                                    pure st
---      TodoSetComplete newIdx newComplete -> do
---                                            pure st
---          let f (idx, todo) | idx == newIdx = (idx, todo { todoComplete = newComplete })
---              f p = p
---           in map f todos
-      ClearCompletedTodos        -> do
-                                    pure st -- filter (not . todoComplete . snd) todos
-      SetTodos todos -> pure $ st { tsTodos = Map.fromList $ zip (map _todoResponseId todos) todos }
-      AddTodo m_todo ->
-        case m_todo of
-          Nothing   -> pure st
-          Just todo@TodoResponse{..} -> pure $ st { tsTodos = Map.insert _todoResponseId todo tsTodos }
+      TodosList                   -> action_todos_list
+      TodoCreate title            -> action_todo_create title
+      TodoDelete todo_id          -> action_todo_delete todo_id
+      TodoEdit todo_id            -> action_todo_edit todo_id
+      TodoUpdate todo_id req      -> action_todo_update todo_id req
+      TodosToggleAllComplete      -> action_todos_toggle_all_complete
+      TodosClearCompleted         -> action_todos_clear_completed
+
+      Internal_SetTodos todos     -> internal_set_todos todos
+      Internal_AddTodo m_todo     -> internal_add_todo m_todo
+      Internal_DeleteTodo todo_id -> internal_delete_todo todo_id
+
+      Nop                         -> pure st
 
     pure st'
+
+    where
+
+    action_todos_list = do
+      jsonAjax "GET" "/todos" [] () $ \case
+        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Right todos   -> pure [SomeStoreAction todoStore $ Internal_SetTodos todos]
+      pure st
+
+    action_todo_create title = do
+      jsonAjax "POST" "/todos" [] (TodoRequest title Active) $ \case
+        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Right m_todo  -> pure [SomeStoreAction todoStore $ Internal_AddTodo m_todo]
+      pure st
+
+    action_todo_delete todo_id = do
+      jsonAjax "DELETE" ("/todos/" <> (Text.pack $ show todo_id)) [] () $ \case
+        Left (_, msg)        -> pure [SomeStoreAction todoStore Nop]
+        Right (bool :: Bool) -> pure [SomeStoreAction todoStore $ Internal_DeleteTodo todo_id]
+      pure st
+
+    action_todo_edit todo_id = do
+      let m_req = Map.lookup todo_id tsTodos
+      case m_req of
+        Nothing   -> pure st
+        Just resp -> action_todo_update todo_id ((todoResponseToRequest resp){_todoRequestState = Editing})
+
+    action_todo_update todo_id req = do
+      jsonAjax "PUT" ("/todos/" <> (Text.pack $ show todo_id)) [] req  $ \case
+        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Right m_todo  -> pure [SomeStoreAction todoStore $ Internal_AddTodo m_todo]
+      pure st
+
+    action_todos_toggle_all_complete = do
+      let m_first_todo = headMay $ Map.toList tsTodos
+      case m_first_todo of
+        Nothing         -> pure st
+        Just first_todo -> do
+          forM_ (Map.toList tsTodos) $ \(todo_id, resp@TodoResponse{..}) -> do
+            action_todo_update todo_id $ (todoResponseToRequest resp){_todoRequestState = flipTodoState _todoResponseState}
+          pure st
+
+    action_todos_clear_completed = do
+      let completed_todos = filter ((==) Completed . _todoResponseState) $ Map.elems tsTodos
+      forM_ completed_todos $ \resp@TodoResponse{..} -> do
+        action_todo_delete _todoResponseId
+      pure st
+
+    internal_set_todos todos = pure $ st { tsTodos = Map.fromList $ zip (map _todoResponseId todos) todos }
+
+    internal_add_todo m_todo = do
+      case m_todo of
+        Nothing   -> pure st
+        Just todo@TodoResponse{..} -> pure $ st { tsTodos = Map.insert _todoResponseId todo tsTodos }
+
+    internal_delete_todo todo_id = pure $ st { tsTodos = Map.delete todo_id tsTodos }
 
 
 
