@@ -48,11 +48,11 @@ data TextInputArgs = TextInputArgs {
 todoTextInput :: ReactView TextInputArgs
 todoTextInput =
   defineStatefulView
-    "todo text input"  -- * JSString
-    ""                 -- * state
-                       -- * Text
-    $ \curText args -> -- * (state -> props -> ReactElementM (StatefulViewEventHandler state ())
-                       -- * (Text -> TextInputArgs -> ReactElementM (StatefulViewEventHandler state())
+    "todo text input"  -- JSString
+    ""                 -- state
+                       -- Text
+    $ \curText args -> -- (state -> props -> ReactElementM (StatefulViewEventHandler state ())
+                       -- (Text -> TextInputArgs -> ReactElementM (StatefulViewEventHandler state())
     input_ $
         maybe [] (\i -> ["id" &= i]) (tiaId args)
         ++

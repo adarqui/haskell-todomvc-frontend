@@ -8,4 +8,4 @@ test:
 	stack test
 
 ghcjs:
-	until stack install --stack-yaml=stack.ghcjs.yaml; do echo trying again; done
+	until stack install --stack-yaml=stack.ghcjs.yaml --copy-bins --haddock; do echo trying again; done
