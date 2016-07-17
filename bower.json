@@ -1,0 +1,20 @@
+{
+  "name": "haskell-todomvc-frontend",
+  "homepage": "https://github.com/adarqui/haskell-todomvc-frontend",
+  "authors": [
+    "Andrew Darqui <andrew.darqui@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "todomvc-app-css": "^2.0.6"
+  }
+}

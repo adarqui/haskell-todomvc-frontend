@@ -243,6 +243,14 @@ todoFooter =
         strong_ $ elemShow itemsLeft
         elemText $ if itemsLeft == 1 then " item left" else " items left"
 
+      ul_ [ "class" $= "filters" ] $ do
+        li_ $ do
+          a_ ["href" $= "#"]          $ elemText "All"
+        li_ $ do
+          a_ ["href" $= "#active"]    $ elemText "Active"
+        li_ $ do
+          a_ ["href" $= "#completed"] $ elemText "Completed"
+
       when (completed > 0) $ do
           button_ [ "id" $= "clear-completed"
                   , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
