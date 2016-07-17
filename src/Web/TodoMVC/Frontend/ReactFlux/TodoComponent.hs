@@ -57,11 +57,12 @@ todoTextInput =
     input_ $
         maybe [] (\i -> ["id" &= i]) (tiaId args)
         <>
-        [ "className" &= tiaClass args
+        [ "className"   &= tiaClass args
         , "placeholder" &= tiaPlaceholder args
-        , "value" &= curText -- using value here creates a controlled component: https://facebook.github.io/react/docs/forms.html
+        , "value"       &= curText -- using value here creates
+                                   -- a controlled component: https://facebook.github.io/react/docs/forms.html
 #ifdef __GHCJS__
-        , "autoFocus" &= True
+        , "autoFocus"   &= True
 #endif
 
         -- Update the current state with the current text in the textbox, sending no actions
