@@ -16,6 +16,7 @@ allow-newer: true
 packages:
 - location: '.'
 - '../ghcjs-router'
+- '../haskell-todomvc-backend'
 - '../react-flux-router'
 
 extra-deps:

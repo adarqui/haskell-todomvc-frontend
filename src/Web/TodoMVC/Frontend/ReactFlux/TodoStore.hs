@@ -12,19 +12,14 @@ import qualified Data.Text       as T
 import           Data.Typeable   (Typeable)
 import           GHC.Generics    (Generic)
 import           React.Flux
+import Web.TodoMVC.Backend.Pure.Todo.Types (Todo(..))
+import Data.Map (Map)
 
 
 
-data Todo = Todo {
-    todoText      :: T.Text
-  , todoComplete  :: Bool
-  , todoIsEditing :: Bool
-} deriving (Show, Typeable)
-
-
-
-newtype TodoState = TodoState {
-    todoList :: [(Int, Todo)]
+newtype TodoStore = TodoStore {
+    todos    :: Map Int Todo,
+    todoCurr :: Maybe Int
 } deriving (Show, Typeable)
 
 
@@ -42,16 +37,16 @@ data TodoAction = TodoCreate T.Text
 
 -- transform :: StoreAction storeData -> storeData -> IO storeData
 --
-instance StoreData TodoState where
-    type StoreAction TodoState = TodoAction
-    transform action (TodoState todos) = do
+instance StoreData TodoStore where
+    type StoreAction TodoStore = TodoAction
+    transform action (TodoStore todos) = do
         putStrLn $ "Action: " ++ show action
         putStrLn $ "Initial todos: " ++ show todos
 
         -- Care is taken here to leave the Haskell object for the pair (Int, Todo) unchanged if the todo
         -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
         -- For more, see the "Performance" section of the React.Flux haddocks.
-        newTodos <- return $ case action of
+        newTodos <- pure $ case action of
             (TodoCreate txt) -> (maximum (map fst todos) + 1, Todo txt False False) : todos
             (TodoDelete i)   -> filter ((/=i) . fst) todos
             (TodoEdit i)     -> let f (idx, todo) | idx == i = (idx, todo { todoIsEditing = True })
@@ -69,7 +64,7 @@ instance StoreData TodoState where
             ClearCompletedTodos        -> filter (not . todoComplete . snd) todos
 
         putStrLn $ "New todos: " ++ show newTodos
-        return $ TodoState newTodos
+        pure $ TodoStore newTodos
 
 
 
@@ -83,8 +78,8 @@ instance StoreData TodoState where
 -- | Create a new store from the initial data.
 -- mkStore :: StoreData storeData => storeData -> ReactStore storeData
 --
-todoStore :: ReactStore TodoState
-todoStore = mkStore $ TodoState
+todoStore :: ReactStore TodoStore
+todoStore = mkStore $ TodoStore
     [ (0, Todo "Learn react" True False)
     , (1, Todo "Learn react-flux" False False)
     ]

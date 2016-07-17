@@ -38,6 +38,7 @@ resolver: lts-6.7
 packages:
 - '.'
 - '../ghcjs-router'
+- '../haskell-todomvc-backend'
 - '../react-flux-router'
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)

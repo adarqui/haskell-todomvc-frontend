@@ -38,13 +38,13 @@ todoApp =
   defineControllerView
     "todo app"          -- Text
     todoStore           -- ReactStore storeData
-                        -- ReactStore TodoState
+                        -- ReactStore TodoStore
     $ \todoState () ->  -- (storeData -> props -> ReactElementM ViewHandler ())
-                        -- (TodoState -> () -> ReactElementM ViewHandler ())
+                        -- (TodoStore -> () -> ReactElementM ViewHandler ())
       div_ $ do
           todoHeader_             -- ReactElementM eventHandler ()
-          mainSection_ todoState  -- TodoState -> ReactElementM eventHandler ()
-          todoFooter_ todoState   -- TodoState -> ReactElementM eventHandler ()
+          mainSection_ todoState  -- TodoStore -> ReactElementM eventHandler ()
+          todoFooter_ todoState   -- TodoStore -> ReactElementM eventHandler ()
 
 
 
@@ -114,7 +114,7 @@ todoHeader_ =
 
 -- onChange :: (Event -> handler) -> PropertyOrHandler handler
 --
-mainSection_ :: TodoState -> ReactElementM ViewEventHandler ()
+mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
 mainSection_ st = section_ ["id" $= "main"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
         [ "type" $= "checkbox"
@@ -223,12 +223,12 @@ todoItem_ !todo =
 -- -> (props -> ReactElementM ViewEventHandler ())
 -- -> ReactView props
 --
-todoFooter :: ReactView TodoState
+todoFooter :: ReactView TodoStore
 todoFooter =
   defineView
     "footer"                -- Text
-    $ \(TodoState todos) -> -- (props -> ReactElementM ViewEventHandler ())
-                            -- (TodoState -> ReactElementM ViewEventHandler ())
+    $ \(TodoStore todos) -> -- (props -> ReactElementM ViewEventHandler ())
+                            -- (TodoStore -> ReactElementM ViewEventHandler ())
     let completed = length (filter (todoComplete . snd) todos)
         itemsLeft = length todos - completed
      in footer_ [ "id" $= "footer"] $ do
@@ -255,12 +255,12 @@ todoFooter =
 --      -> ReactElementM eventHandler a -- ^ The children of the element
 --      -> ReactElementM eventHandler a
 --
-todoFooter_ :: TodoState -> ReactElementM eventHandler ()
+todoFooter_ :: TodoStore -> ReactElementM eventHandler ()
 todoFooter_ !s =
   view
     todoFooter -- ReactView props
-               -- ReactView TodoState
+               -- ReactView TodoStore
     s          -- props
-               -- TodoState
+               -- TodoStore
     mempty     -- ReactElementM eventHandler a
                -- ReactElementM eventHandler ()

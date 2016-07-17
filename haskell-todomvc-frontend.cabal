@@ -22,7 +22,9 @@ library
                        Web.TodoMVC.Frontend.ReactFlux.TodoStore
                        Web.TodoMVC.Frontend.ReactFlux.TodoView
   build-depends:       base >= 4.7 && < 5
+                     , containers
                      , deepseq
+                     , haskell-todomvc-backend
                      , react-flux
                      , react-flux-router
                      , text

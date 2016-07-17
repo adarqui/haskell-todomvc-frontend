@@ -14,6 +14,7 @@ import           Web.TodoMVC.Frontend.ReactFlux.TodoView
 --
 reactFluxMain :: IO ()
 reactFluxMain = do
+  initAjax
   reactRender
     "todoapp" -- String
     todoApp   -- ReactView props
