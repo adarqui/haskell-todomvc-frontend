@@ -40,7 +40,7 @@ data TodoAction = TodoCreate T.Text
 
 
 
--- * transform :: StoreAction storeData -> storeData -> IO storeData
+-- transform :: StoreAction storeData -> storeData -> IO storeData
 --
 instance StoreData TodoState where
     type StoreAction TodoState = TodoAction
@@ -73,15 +73,15 @@ instance StoreData TodoState where
 
 
 
--- * newtype ReactStoreRef storeData = ReactStoreRef JSVal
+-- newtype ReactStoreRef storeData = ReactStoreRef JSVal
 --
--- * data ReactStore storeData = ReactStore {
--- *    storeRef  :: ReactStoreRef storeData
--- *  , storeData :: MVar storeData
--- * }
+-- data ReactStore storeData = ReactStore {
+--    storeRef  :: ReactStoreRef storeData
+--  , storeData :: MVar storeData
+-- }
 --
--- * | Create a new store from the initial data.
--- * mkStore :: StoreData storeData => storeData -> ReactStore storeData
+-- | Create a new store from the initial data.
+-- mkStore :: StoreData storeData => storeData -> ReactStore storeData
 --
 todoStore :: ReactStore TodoState
 todoStore = mkStore $ TodoState

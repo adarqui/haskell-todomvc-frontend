@@ -33,17 +33,17 @@ data TextInputArgs = TextInputArgs {
 -- but not yet saved.  The save is triggered either on enter or blur, which resets the state/content
 -- of the text box to the empty string.
 
--- * newtype ReactView props = ReactView { reactView :: ReactViewRef props }
+-- newtype ReactView props = ReactView { reactView :: ReactViewRef props }
 --
--- * | A stateful-view event handler produces a list of store actions and potentially a new state.  If
--- * -- the new state is nothing, no change is made to the state (which allows an optimization in that we
--- * do not need to re-render the view).
+-- | A stateful-view event handler produces a list of store actions and potentially a new state.  If
+-- -- the new state is nothing, no change is made to the state (which allows an optimization in that we
+-- do not need to re-render the view).
 -- *
--- * defineStatefulView :: (Typeable state, NFData state, Typeable props)
--- *                    => JSString -- ^ A name for this view, used only for debugging/console logging
--- *                    -> state -- ^ The initial state
--- *                    -> (state -> props -> ReactElementM (StatefulViewEventHandler state) ()) -- ^ The rendering function
--- *                    -> ReactView props
+-- defineStatefulView :: (Typeable state, NFData state, Typeable props)
+--                    => JSString -- ^ A name for this view, used only for debugging/console logging
+--                    -> state -- ^ The initial state
+--                    -> (state -> props -> ReactElementM (StatefulViewEventHandler state) ()) -- ^ The rendering function
+--                    -> ReactView props
 --
 todoTextInput :: ReactView TextInputArgs
 todoTextInput =
@@ -77,18 +77,18 @@ todoTextInput =
 
 -- | A combinator suitible for use inside rendering functions.
 
--- * view :: Typeable props
--- *      => ReactView props -- ^ the view
--- *      -> props -- ^ the properties to pass into the instance of this view
--- *      -> ReactElementM eventHandler a -- ^ The children of the element
--- *      -> ReactElementM eventHandler a
+-- view :: Typeable props
+--      => ReactView props -- ^ the view
+--      -> props -- ^ the properties to pass into the instance of this view
+--      -> ReactElementM eventHandler a -- ^ The children of the element
+--      -> ReactElementM eventHandler a
 --
 todoTextInput_ :: TextInputArgs -> ReactElementM eventHandler ()
 todoTextInput_ !args =
   view
-    todoTextInput -- * ReactView props
-                  -- * ReactView TextInputArgs
-    args          -- * props
-                  -- * TextInputArgs
-    mempty        -- * ReactElementM eventHandler a
-                  -- * ReactElementM eventHandler ()
+    todoTextInput -- ReactView props
+                  -- ReactView TextInputArgs
+    args          -- props
+                  -- TextInputArgs
+    mempty        -- ReactElementM eventHandler a
+                  -- ReactElementM eventHandler ()

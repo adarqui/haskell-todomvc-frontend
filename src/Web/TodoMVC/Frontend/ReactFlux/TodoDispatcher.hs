@@ -9,11 +9,11 @@ import           Web.TodoMVC.Frontend.ReactFlux.TodoStore
 
 
 
--- * data SomeStoreAction = forall storeData. (StoreData storeData, NFData (StoreAction storeData))
--- *    => SomeStoreAction (ReactStore storeData) (StoreAction storeData)
+-- data SomeStoreAction = forall storeData. (StoreData storeData, NFData (StoreAction storeData))
+--    => SomeStoreAction (ReactStore storeData) (StoreAction storeData)
 -- *
--- * instance NFData SomeStoreAction where
--- *    rnf (SomeStoreAction _ action) = action `deepseq` ()
+-- instance NFData SomeStoreAction where
+--    rnf (SomeStoreAction _ action) = action `deepseq` ()
 --
 dispatchTodo :: TodoAction -> [SomeStoreAction]
 dispatchTodo a = [SomeStoreAction todoStore a]
