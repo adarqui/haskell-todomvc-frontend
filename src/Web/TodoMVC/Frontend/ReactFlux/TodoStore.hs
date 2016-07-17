@@ -10,7 +10,7 @@ module Web.TodoMVC.Frontend.ReactFlux.TodoStore where
 
 
 
-import           Control.DeepSeq
+import           Control.DeepSeq                     (NFData)
 import           Control.Monad                       (forM_)
 import           Control.Monad.IO.Class              (liftIO)
 import           Data.Map                            (Map)
