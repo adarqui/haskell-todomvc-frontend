@@ -1,17 +1,18 @@
 {-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-
-
 
 -- | The division between a view and a component is arbitrary, but for me components are pieces that
 -- are re-used many times for different purposes.  In the TODO app, there is one component for the
 -- text box.
+--
 module Web.TodoMVC.Frontend.ReactFlux.TodoComponent where
 
 
 
+import           Data.Monoid   ((<>))
 import           Data.Text     (Text)
-import qualified Data.Text     as T
+import qualified Data.Text     as Text
 import           Data.Typeable (Typeable)
 import           React.Flux
 
@@ -23,8 +24,8 @@ data TextInputArgs = TextInputArgs {
       tiaId          :: Maybe Text
     , tiaClass       :: Text
     , tiaPlaceholder :: Text
-    , tiaOnSave      :: T.Text -> [SomeStoreAction]
-    , tiaValue       :: Maybe T.Text
+    , tiaOnSave      :: Text.Text -> [SomeStoreAction]
+    , tiaValue       :: Maybe Text.Text
 } deriving (Typeable)
 
 
@@ -55,22 +56,24 @@ todoTextInput =
                        -- (Text -> TextInputArgs -> ReactElementM (StatefulViewEventHandler state())
     input_ $
         maybe [] (\i -> ["id" &= i]) (tiaId args)
-        ++
+        <>
         [ "className" &= tiaClass args
         , "placeholder" &= tiaPlaceholder args
         , "value" &= curText -- using value here creates a controlled component: https://facebook.github.io/react/docs/forms.html
---        , "autoFocus" &= True
+#ifdef __GHCJS__
+        , "autoFocus" &= True
+#endif
 
         -- Update the current state with the current text in the textbox, sending no actions
         , onChange $ \evt _ -> ([], Just $ target evt "value")
 
         -- Produce the save action and reset the current state to the empty string
         , onBlur $ \_ _ curState ->
-            if not (T.null curState)
+            if not (Text.null curState)
                 then (tiaOnSave args curState, Just "")
                 else ([], Nothing)
         , onKeyDown $ \_ evt curState ->
-             if keyCode evt == 13 && not (T.null curState) -- 13 is enter
+             if keyCode evt == 13 && not (Text.null curState) -- 13 is enter
                  then (tiaOnSave args curState, Just "")
                  else ([], Nothing)
         ]
