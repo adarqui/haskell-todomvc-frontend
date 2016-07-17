@@ -8,29 +8,30 @@ module Web.TodoMVC.Frontend.ReactFlux.TodoStore where
 
 
 import           Control.DeepSeq
-import qualified Data.Text       as T
-import           Data.Typeable   (Typeable)
-import           GHC.Generics    (Generic)
+import           Data.Map                            (Map)
+import qualified Data.Text                           as T
+import           Data.Typeable                       (Typeable)
+import           GHC.Generics                        (Generic)
 import           React.Flux
-import Web.TodoMVC.Backend.Pure.Todo.Types (Todo(..))
-import Data.Map (Map)
+import           Web.TodoMVC.Backend.Pure.Todo.Types (Todo (..))
 
 
 
-newtype TodoStore = TodoStore {
-    todos    :: Map Int Todo,
-    todoCurr :: Maybe Int
+data TodoStore = TodoStore {
+  todos    :: Map Int Todo,
+  todoCurr :: Maybe Int
 } deriving (Show, Typeable)
 
 
 
-data TodoAction = TodoCreate T.Text
-                | TodoDelete Int
-                | TodoEdit Int
-                | UpdateText Int T.Text
-                | ToggleAllComplete
-                | TodoSetComplete Int Bool
-                | ClearCompletedTodos
+data TodoAction
+  = TodoCreate T.Text
+  | TodoDelete Int
+  | TodoEdit Int
+  | UpdateText Int T.Text
+  | ToggleAllComplete
+  | TodoSetComplete Int Bool
+  | ClearCompletedTodos
   deriving (Show, Typeable, Generic, NFData)
 
 
@@ -38,33 +39,33 @@ data TodoAction = TodoCreate T.Text
 -- transform :: StoreAction storeData -> storeData -> IO storeData
 --
 instance StoreData TodoStore where
-    type StoreAction TodoStore = TodoAction
-    transform action (TodoStore todos) = do
-        putStrLn $ "Action: " ++ show action
-        putStrLn $ "Initial todos: " ++ show todos
+  type StoreAction TodoStore = TodoAction
+  transform action (TodoStore todos) = do
+    putStrLn $ "Action: " ++ show action
+    putStrLn $ "Initial todos: " ++ show todos
 
-        -- Care is taken here to leave the Haskell object for the pair (Int, Todo) unchanged if the todo
-        -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
-        -- For more, see the "Performance" section of the React.Flux haddocks.
-        newTodos <- pure $ case action of
-            (TodoCreate txt) -> (maximum (map fst todos) + 1, Todo txt False False) : todos
-            (TodoDelete i)   -> filter ((/=i) . fst) todos
-            (TodoEdit i)     -> let f (idx, todo) | idx == i = (idx, todo { todoIsEditing = True })
-                                    f p = p
-                                in map f todos
-            (UpdateText newIdx newTxt) ->
-                let f (idx, todo) | idx == newIdx = (idx, todo { todoText = newTxt, todoIsEditing = False })
-                    f p = p
-                 in map f todos
-            ToggleAllComplete          -> [ (idx, Todo txt True False) | (idx, Todo txt _ _) <- todos ]
-            TodoSetComplete newIdx newComplete ->
-                let f (idx, todo) | idx == newIdx = (idx, todo { todoComplete = newComplete })
-                    f p = p
-                 in map f todos
-            ClearCompletedTodos        -> filter (not . todoComplete . snd) todos
+    -- Care is taken here to leave the Haskell object for the pair (Int, Todo) unchanged if the todo
+    -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
+    -- For more, see the "Performance" section of the React.Flux haddocks.
+    newTodos <- pure $ case action of
+      (TodoCreate txt) -> (maximum (map fst todos) + 1, Todo txt False False) : todos
+      (TodoDelete i)   -> filter ((/=i) . fst) todos
+      (TodoEdit i)     -> let f (idx, todo) | idx == i = (idx, todo { todoIsEditing = True })
+                              f p = p
+                          in map f todos
+      (UpdateText newIdx newTxt) ->
+          let f (idx, todo) | idx == newIdx = (idx, todo { todoText = newTxt, todoIsEditing = False })
+              f p = p
+           in map f todos
+      ToggleAllComplete          -> [ (idx, Todo txt True False) | (idx, Todo txt _ _) <- todos ]
+      TodoSetComplete newIdx newComplete ->
+          let f (idx, todo) | idx == newIdx = (idx, todo { todoComplete = newComplete })
+              f p = p
+           in map f todos
+      ClearCompletedTodos        -> filter (not . todoComplete . snd) todos
 
-        putStrLn $ "New todos: " ++ show newTodos
-        pure $ TodoStore newTodos
+    putStrLn $ "New todos: " ++ show newTodos
+    pure $ TodoStore newTodos
 
 
 
@@ -80,6 +81,6 @@ instance StoreData TodoStore where
 --
 todoStore :: ReactStore TodoStore
 todoStore = mkStore $ TodoStore
-    [ (0, Todo "Learn react" True False)
-    , (1, Todo "Learn react-flux" False False)
-    ]
+  [ (0, Todo "Learn react" True False)
+  , (1, Todo "Learn react-flux" False False)
+  ]
