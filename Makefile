@@ -12,8 +12,8 @@ docs:
 
 ghcjs:
 	until stack install --stack-yaml=stack.ghcjs.yaml --copy-bins --local-bin-path=./dist/react-flux; do echo trying again; done
-	ccjs ./dist/react-flux/all.js --compilation_level=ADVANCED_OPTIMIZATIONS > ./dist/react-flux/all.min.js
 	find . -name "*reactflux.jsexe" -exec rsync -av {}/ ./dist/react-flux/ \;
+	ccjs ./dist/react-flux/all.js --compilation_level=ADVANCED_OPTIMIZATIONS > ./dist/react-flux/all.min.js
 
 ghci:
 	stack ghci haskell-todomvc-frontend

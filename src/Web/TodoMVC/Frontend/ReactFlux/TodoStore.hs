@@ -10,9 +10,8 @@ module Web.TodoMVC.Frontend.ReactFlux.TodoStore where
 
 
 
-import Safe (headMay)
-import Control.Monad (forM_)
 import           Control.DeepSeq
+import           Control.Monad                       (forM_)
 import           Control.Monad.IO.Class              (liftIO)
 import           Data.Map                            (Map)
 import qualified Data.Map                            as Map
@@ -22,11 +21,13 @@ import qualified Data.Text                           as Text
 import           Data.Typeable                       (Typeable)
 import           GHC.Generics                        (Generic)
 import           React.Flux
+import           Safe                                (headMay)
 import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoRequest (..),
                                                       TodoResponse (..),
                                                       TodoResponses,
                                                       TodoState (..),
-                                                      todoResponseToRequest, flipTodoState)
+                                                      flipTodoState,
+                                                      todoResponseToRequest)
 
 
 
@@ -44,7 +45,6 @@ data TodoAction
   | TodoEdit               TodoId
   | TodoUpdate             TodoId TodoRequest
   | TodosToggleAllComplete
-  | TodoSetComplete        TodoId Bool
   | TodosClearCompleted
   | Internal_SetTodos      TodoResponses
   | Internal_AddTodo       (Maybe TodoResponse)
@@ -68,7 +68,7 @@ instance StoreData TodoStore where
   type StoreAction TodoStore = TodoAction
   transform action st@TodoStore{..} = do
 
-    liftIO $ putStrLn "transform"
+    liftIO $ putStrLn $ "transform: " <> show action
 
     -- Care is taken here to leave the Haskell object for the pair (Int, Todo) unchanged if the todo
     -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
@@ -125,26 +125,27 @@ instance StoreData TodoStore where
     action_todos_toggle_all_complete = do
       let m_first_todo = headMay $ Map.toList tsTodos
       case m_first_todo of
-        Nothing         -> pure st
-        Just first_todo -> do
+        Nothing              -> pure st
+        Just (_, first_todo) -> do
+          let toggle = flipTodoState (_todoResponseState first_todo)
           forM_ (Map.toList tsTodos) $ \(todo_id, resp@TodoResponse{..}) -> do
-            action_todo_update todo_id $ (todoResponseToRequest resp){_todoRequestState = flipTodoState _todoResponseState}
+            action_todo_update todo_id $ (todoResponseToRequest resp){_todoRequestState = toggle}
           pure st
 
     action_todos_clear_completed = do
       let completed_todos = filter ((==) Completed . _todoResponseState) $ Map.elems tsTodos
-      forM_ completed_todos $ \resp@TodoResponse{..} -> do
+      forM_ completed_todos $ \TodoResponse{..} -> do
         action_todo_delete _todoResponseId
       pure st
 
-    internal_set_todos todos = pure $ st { tsTodos = Map.fromList $ zip (map _todoResponseId todos) todos }
+    internal_set_todos todos = pure $ st{tsTodos = Map.fromList $ zip (map _todoResponseId todos) todos}
 
     internal_add_todo m_todo = do
       case m_todo of
-        Nothing   -> pure st
-        Just todo@TodoResponse{..} -> pure $ st { tsTodos = Map.insert _todoResponseId todo tsTodos }
+        Nothing                    -> pure st
+        Just todo@TodoResponse{..} -> pure $ st{tsTodos = Map.insert _todoResponseId todo tsTodos}
 
-    internal_delete_todo todo_id = pure $ st { tsTodos = Map.delete todo_id tsTodos }
+    internal_delete_todo todo_id = pure $ st{tsTodos = Map.delete todo_id tsTodos}
 
 
 

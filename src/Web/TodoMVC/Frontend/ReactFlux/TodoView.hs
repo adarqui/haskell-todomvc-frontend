@@ -18,7 +18,8 @@ import           Web.TodoMVC.Frontend.ReactFlux.TodoDispatcher
 import           Web.TodoMVC.Frontend.ReactFlux.TodoStore
 
 import           Web.TodoMVC.Backend.Pure.Todo.Types           (TodoRequest (..), TodoResponse (..),
-                                                                TodoState (..), TodoState (Completed))
+                                                                TodoState (..), TodoState (Completed),
+                                                                flipTodoState)
 
 
 
@@ -47,9 +48,9 @@ todoApp =
     $ \todoState () ->  -- (storeData -> props -> ReactElementM ViewHandler ())
                         -- (TodoStore -> () -> ReactElementM ViewHandler ())
       div_ $ do
-          todoHeader_             -- ReactElementM eventHandler ()
-          mainSection_ todoState  -- TodoStore -> ReactElementM eventHandler ()
-          todoFooter_ todoState   -- TodoStore -> ReactElementM eventHandler ()
+        todoHeader_             -- ReactElementM eventHandler ()
+        mainSection_ todoState  -- TodoStore -> ReactElementM eventHandler ()
+        todoFooter_ todoState   -- TodoStore -> ReactElementM eventHandler ()
 
 
 
@@ -122,10 +123,10 @@ todoHeader_ =
 mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
 mainSection_ TodoStore{..} = section_ ["id" $= "main"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
-        [ "type" $= "checkbox"
-        , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
-        , onChange $ \_ -> dispatchTodo TodosToggleAllComplete
-        ]
+      [ "type" $= "checkbox"
+      , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
+      , onChange $ \_ -> dispatchTodo TodosToggleAllComplete
+      ]
 
     ul_ [ "id" $= "todo-list" ] $ mapM_ todoItem_ $ Map.elems tsTodos
 
@@ -174,7 +175,7 @@ todoItem =
             input_ [ "className" $= "toggle"
                    , "type" $= "checkbox"
                    , "checked" @= (Completed == _todoResponseState)
-                   , onChange $ \_ -> dispatchTodo $ TodoSetComplete _todoResponseId $ not $ Completed == _todoResponseState
+                   , onChange $ \_ -> dispatchTodo $ TodoUpdate _todoResponseId $ TodoRequest _todoResponseTitle (flipTodoState _todoResponseState)
                    ]
 
             label_ [ onDoubleClick $ \_ _ -> dispatchTodo $ TodoEdit _todoResponseId] $
@@ -184,12 +185,12 @@ todoItem =
 
         when (Editing == _todoResponseState) $
             todoTextInput_ TextInputArgs
-                { tiaId          = Nothing
-                , tiaClass       = "edit"
-                , tiaPlaceholder = ""
-                , tiaOnSave      = dispatchTodo . \input_text -> TodoUpdate _todoResponseId (TodoRequest input_text _todoResponseState)
-                , tiaValue       = Just _todoResponseTitle
-                }
+              { tiaId          = Nothing
+              , tiaClass       = "edit"
+              , tiaPlaceholder = ""
+              , tiaOnSave      = dispatchTodo . \input_text -> TodoUpdate _todoResponseId (TodoRequest input_text Active)
+              , tiaValue       = Just _todoResponseTitle
+              }
 
 
 
@@ -236,17 +237,17 @@ todoFooter =
                               -- (TodoStore -> ReactElementM ViewEventHandler ())
     let completed = length (filter (\TodoResponse{..} -> Completed == _todoResponseState) $ Map.elems tsTodos)
         itemsLeft = Map.size tsTodos - completed
-     in footer_ [ "id" $= "footer"] $ do
+    in footer_ [ "id" $= "footer"] $ do
 
-            span_ [ "id" $= "todo-count" ] $ do
-                strong_ $ elemShow itemsLeft
-                elemText $ if itemsLeft == 1 then " item left" else " items left"
+      span_ [ "id" $= "todo-count" ] $ do
+        strong_ $ elemShow itemsLeft
+        elemText $ if itemsLeft == 1 then " item left" else " items left"
 
-            when (completed > 0) $ do
-                button_ [ "id" $= "clear-completed"
-                        , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
-                        ] $
-                    elemString $ "Clear completed (" ++ show completed ++ ")"
+      when (completed > 0) $ do
+          button_ [ "id" $= "clear-completed"
+                  , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
+                  ] $
+            elemString $ "Clear completed (" ++ show completed ++ ")"
 
 
 
