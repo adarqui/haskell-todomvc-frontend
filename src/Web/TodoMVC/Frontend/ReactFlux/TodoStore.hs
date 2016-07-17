@@ -49,7 +49,7 @@ data TodoAction
   | Internal_SetTodos      TodoResponses
   | Internal_AddTodo       (Maybe TodoResponse)
   | Internal_DeleteTodo    TodoId
-  | Nop
+  | Internal_AjaxError     Text
   deriving (Show, Typeable, Generic, NFData)
 
 
@@ -68,7 +68,7 @@ instance StoreData TodoStore where
   type StoreAction TodoStore = TodoAction
   transform action st@TodoStore{..} = do
 
-    liftIO $ putStrLn $ "transform: " <> show action
+    liftIO $ putStrLn $ "transform action: " <> show action
 
     -- Care is taken here to leave the Haskell object for the pair (Int, Todo) unchanged if the todo
     -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
@@ -85,8 +85,7 @@ instance StoreData TodoStore where
       Internal_SetTodos todos     -> internal_set_todos todos
       Internal_AddTodo m_todo     -> internal_add_todo m_todo
       Internal_DeleteTodo todo_id -> internal_delete_todo todo_id
-
-      Nop                         -> pure st
+      Internal_AjaxError _        -> pure st
 
     pure st'
 
@@ -94,20 +93,21 @@ instance StoreData TodoStore where
 
     action_todos_list = do
       jsonAjax "GET" "/todos" [] () $ \case
-        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Left (_, msg) -> pure [SomeStoreAction todoStore $ Internal_AjaxError msg]
         Right todos   -> pure [SomeStoreAction todoStore $ Internal_SetTodos todos]
       pure st
 
     action_todo_create title = do
       jsonAjax "POST" "/todos" [] (TodoRequest title Active) $ \case
-        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Left (_, msg) -> pure [SomeStoreAction todoStore $ Internal_AjaxError msg]
         Right m_todo  -> pure [SomeStoreAction todoStore $ Internal_AddTodo m_todo]
       pure st
 
     action_todo_delete todo_id = do
       jsonAjax "DELETE" ("/todos/" <> (Text.pack $ show todo_id)) [] () $ \case
-        Left (_, msg)        -> pure [SomeStoreAction todoStore Nop]
-        Right (bool :: Bool) -> pure [SomeStoreAction todoStore $ Internal_DeleteTodo todo_id]
+        Left (_, msg)         -> pure [SomeStoreAction todoStore $ Internal_AjaxError msg]
+        Right Nothing         -> pure [SomeStoreAction todoStore $ Internal_AjaxError "Unable to parse JSON"]
+        Right (Just todo_id') -> pure [SomeStoreAction todoStore $ Internal_DeleteTodo todo_id']
       pure st
 
     action_todo_edit todo_id = do
@@ -118,7 +118,7 @@ instance StoreData TodoStore where
 
     action_todo_update todo_id req = do
       jsonAjax "PUT" ("/todos/" <> (Text.pack $ show todo_id)) [] req  $ \case
-        Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+        Left (_, msg) -> pure [SomeStoreAction todoStore $ Internal_AjaxError msg]
         Right m_todo  -> pure [SomeStoreAction todoStore $ Internal_AddTodo m_todo]
       pure st
 
