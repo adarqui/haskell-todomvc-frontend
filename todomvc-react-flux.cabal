@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Web.TodoMVC.Frontend.ReactFlux
+                       Web.TodoMVC.Frontend.ReactFlux.Main
                        Web.TodoMVC.Frontend.ReactFlux.TodoComponent
                        Web.TodoMVC.Frontend.ReactFlux.TodoDispatcher
                        Web.TodoMVC.Frontend.ReactFlux.TodoStore
