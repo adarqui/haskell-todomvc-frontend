@@ -80,7 +80,7 @@ todoHeader =
     "header" -- Text
     $ \() -> -- (props -> ReactElementM ViewEventHandler ())
              -- (() -> ReactElementM ViewEventHandler ())
-    header_ ["id" $= "header"] $ do
+    header_ ["id" $= "header", "className" $= "header"] $ do
         h1_ "todos"
         todoTextInput_  TextInputArgs
           { tiaId          = Just "new-todo"
@@ -121,7 +121,8 @@ todoHeader_ =
 -- onChange :: (Event -> handler) -> PropertyOrHandler handler
 --
 mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
-mainSection_ TodoStore{..} = section_ ["id" $= "main"] $ do
+mainSection_ TodoStore{..} =
+  section_ ["id" $= "main", "className" $= "todoapp"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
       [ "type" $= "checkbox"
       , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
@@ -237,13 +238,13 @@ todoFooter =
                               -- (TodoStore -> ReactElementM ViewEventHandler ())
     let completed = length (filter (\TodoResponse{..} -> Completed == _todoResponseState) $ Map.elems tsTodos)
         itemsLeft = Map.size tsTodos - completed
-    in footer_ [ "id" $= "footer"] $ do
+    in footer_ ["id" $= "footer", "className" $= "footer"] $ do
 
-      span_ [ "id" $= "todo-count" ] $ do
+      span_ ["id" $= "todo-count", "className" $= "todo-count"] $ do
         strong_ $ elemShow itemsLeft
         elemText $ if itemsLeft == 1 then " item left" else " items left"
 
-      ul_ [ "class" $= "filters" ] $ do
+      ul_ ["className" $= "filters"] $ do
         li_ $ do
           a_ ["href" $= "#"]          $ elemText "All"
         li_ $ do
@@ -253,6 +254,7 @@ todoFooter =
 
       when (completed > 0) $ do
           button_ [ "id" $= "clear-completed"
+                  , "className" $= "clear-completed"
                   , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
                   ] $
             elemString $ "Clear completed (" ++ show completed ++ ")"
