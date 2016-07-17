@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -16,25 +17,28 @@ import qualified Data.Text                           as Text
 import           Data.Typeable                       (Typeable)
 import           GHC.Generics                        (Generic)
 import           React.Flux
-import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoResponse (..))
+import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoResponse (..), TodoResponses)
 
 
 
 data TodoStore = TodoStore {
-  tsTodos       :: Map TodoId TodoResponse,
-  tsCurrentTodo :: Maybe TodoId
-} deriving (Show, Typeable)
+  tsTodos       :: !(Map TodoId TodoResponse),
+  tsCurrentTodo :: !(Maybe TodoId)
+} deriving (Show, Generic, Typeable, NFData)
 
 
 
 data TodoAction
-  = TodoCreate          Text
+  = TodoGets
+  | TodoCreate          Text
   | TodoDelete          TodoId
   | TodoEdit            TodoId
   | UpdateText          TodoId Text
   | ToggleAllComplete
   | TodoSetComplete     TodoId Bool
   | ClearCompletedTodos
+  | SetTodos            TodoResponses
+  | Nop
   deriving (Show, Typeable, Generic, NFData)
 
 
@@ -49,6 +53,11 @@ instance StoreData TodoStore where
     -- itself is unchanged.  This allows React to avoid re-rendering the todo when it does not change.
     -- For more, see the "Performance" section of the React.Flux haddocks.
     st' <- case action of
+      TodoGets         -> do
+                          jsonAjax "GET" "/todos" [] () $ \case
+                            Left (_, msg) -> pure [SomeStoreAction todoStore Nop]
+                            Right todos   -> pure [SomeStoreAction todoStore $ SetTodos todos]
+                          pure st
       (TodoCreate txt) -> do -- st { tsTodos = (maximum (map fst todos) + 1, Todo txt False False) : todos }
                           pure st
       (TodoDelete i)   -> do -- TodoStore (filter ((/=i) . fst) todos) currentTodo

@@ -25,7 +25,7 @@ library
                      , containers
                      , deepseq
                      , haskell-todomvc-backend
-                     , react-flux
+                     , react-flux == 1.1.1
                      , react-flux-router
                      , text
                      , transformers
