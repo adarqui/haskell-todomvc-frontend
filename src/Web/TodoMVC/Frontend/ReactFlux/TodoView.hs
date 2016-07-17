@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 
 
@@ -8,12 +9,16 @@ module Web.TodoMVC.Frontend.ReactFlux.TodoView where
 
 
 
-import           Control.Monad  (when)
+import           Control.Monad                                 (when)
+import qualified Data.Map                                      as Map
 import           React.Flux
 
 import           Web.TodoMVC.Frontend.ReactFlux.TodoComponent
 import           Web.TodoMVC.Frontend.ReactFlux.TodoDispatcher
 import           Web.TodoMVC.Frontend.ReactFlux.TodoStore
+
+import           Web.TodoMVC.Backend.Pure.Todo.Types           (TodoResponse (..),
+                                                                TodoState (..), TodoState (Completed))
 
 
 
@@ -115,14 +120,14 @@ todoHeader_ =
 -- onChange :: (Event -> handler) -> PropertyOrHandler handler
 --
 mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
-mainSection_ st = section_ ["id" $= "main"] $ do
+mainSection_ TodoStore{..} = section_ ["id" $= "main"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
         [ "type" $= "checkbox"
-        , "checked" $= if all (todoComplete . snd) $ todoList st then "checked" else ""
+        , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
         , onChange $ \_ -> dispatchTodo ToggleAllComplete
         ]
 
-    ul_ [ "id" $= "todo-list" ] $ mapM_ todoItem_ $ todoList st
+    ul_ [ "id" $= "todo-list" ] $ mapM_ todoItem_ $ Map.elems tsTodos
 
 
 
@@ -156,34 +161,34 @@ mainSection_ st = section_ ["id" $= "main"] $ do
 --
 -- elemText :: T.Text -> ReactElementM eventHandler ()
 --
-todoItem :: ReactView (Int, Todo)
+todoItem :: ReactView TodoResponse
 todoItem =
   defineView
-    "todo item"           -- Txt
-    $ \(todoIdx, todo) -> -- (props -> ReactElementM ViewEventHandler ())
-    li_ [ classNames [("completed", todoComplete todo), ("editing", todoIsEditing todo)]
-        , "key" @= todoIdx
+    "todo item"                 -- Text
+    $ \TodoResponse{..} -> -- (props -> ReactElementM ViewEventHandler ())
+    li_ [ classNames [("completed", Completed == _todoResponseState), ("editing", Editing == _todoResponseState)]
+        , "key" @= _todoResponseId
         ] $ do
 
         cldiv_ "view" $ do
             input_ [ "className" $= "toggle"
                    , "type" $= "checkbox"
-                   , "checked" @= todoComplete todo
-                   , onChange $ \_ -> dispatchTodo $ TodoSetComplete todoIdx $ not $ todoComplete todo
+                   , "checked" @= (Completed == _todoResponseState)
+                   , onChange $ \_ -> dispatchTodo $ TodoSetComplete _todoResponseId $ not $ Completed == _todoResponseState
                    ]
 
-            label_ [ onDoubleClick $ \_ _ -> dispatchTodo $ TodoEdit todoIdx] $
-                elemText $ todoText todo
+            label_ [ onDoubleClick $ \_ _ -> dispatchTodo $ TodoEdit _todoResponseId] $
+                elemText _todoResponseTitle
 
-            clbutton_ "destroy" (dispatchTodo $ TodoDelete todoIdx) mempty
+            clbutton_ "destroy" (dispatchTodo $ TodoDelete _todoResponseId) mempty
 
-        when (todoIsEditing todo) $
+        when (Editing == _todoResponseState) $
             todoTextInput_ TextInputArgs
-                { tiaId = Nothing
-                , tiaClass = "edit"
+                { tiaId          = Nothing
+                , tiaClass       = "edit"
                 , tiaPlaceholder = ""
-                , tiaOnSave = dispatchTodo . UpdateText todoIdx
-                , tiaValue = Just $ todoText todo
+                , tiaOnSave      = dispatchTodo . UpdateText _todoResponseId
+                , tiaValue       = Just _todoResponseTitle
                 }
 
 
@@ -200,16 +205,16 @@ todoItem =
 --
 -- todoItem :: ReactView (Int, Todo)
 --
-todoItem_ :: (Int, Todo) -> ReactElementM eventHandler ()
-todoItem_ !todo =
+todoItem_ :: TodoResponse -> ReactElementM eventHandler ()
+todoItem_ !todo@TodoResponse{..} =
   viewWithIKey
-    todoItem   -- ReactView props
-               -- ReactView (Int, Todo)
-    (fst todo) -- Int
-    todo       -- props
-               -- (Int, Todo)
-    mempty     -- ReactElementM eventHandler a
-               -- ReactElementM eventHandler ()
+    todoItem                       -- ReactView props
+                                   -- ReactView TodoResponse
+    (fromIntegral _todoResponseId) -- Int
+    todo                           -- props
+                                   -- TodoResponse
+    mempty                         -- ReactElementM eventHandler a
+                                   -- ReactElementM eventHandler ()
 
 
 
@@ -226,11 +231,11 @@ todoItem_ !todo =
 todoFooter :: ReactView TodoStore
 todoFooter =
   defineView
-    "footer"                -- Text
-    $ \(TodoStore todos) -> -- (props -> ReactElementM ViewEventHandler ())
-                            -- (TodoStore -> ReactElementM ViewEventHandler ())
-    let completed = length (filter (todoComplete . snd) todos)
-        itemsLeft = length todos - completed
+    "footer"                  -- Text
+    $ \TodoStore{..} -> -- (props -> ReactElementM ViewEventHandler ())
+                              -- (TodoStore -> ReactElementM ViewEventHandler ())
+    let completed = length (filter (\TodoResponse{..} -> Completed == _todoResponseState) $ Map.elems tsTodos)
+        itemsLeft = Map.size tsTodos - completed
      in footer_ [ "id" $= "footer"] $ do
 
             span_ [ "id" $= "todo-count" ] $ do
