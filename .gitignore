@@ -5,7 +5,6 @@
 *.tix
 *.swp
 .hpc/
-dist
 examples/dist/*
 .cabal-sandbox/
 .DS_Store
