@@ -124,12 +124,13 @@ mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
 mainSection_ TodoStore{..} =
   section_ ["id" $= "main", "className" $= "todoapp"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
-      [ "type" $= "checkbox"
-      , "checked" $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
-      , onChange $ \_ -> dispatchTodo TodosToggleAllComplete
+      [ "type"      $= "checkbox"
+      , "className" $= "toggle-all"
+      , "checked"   $= if all ((==) Completed . _todoResponseState) $ Map.elems tsTodos then "checked" else ""
+      , onChange    $ \_ -> dispatchTodo TodosToggleAllComplete
       ]
 
-    ul_ [ "id" $= "todo-list" ] $ mapM_ todoItem_ $ Map.elems tsTodos
+    ul_ ["id" $= "todo-list", "className" $= "todo-list"] $ mapM_ todoItem_ $ Map.elems tsTodos
 
 
 
@@ -174,9 +175,9 @@ todoItem =
 
         cldiv_ "view" $ do
             input_ [ "className" $= "toggle"
-                   , "type" $= "checkbox"
-                   , "checked" @= (Completed == _todoResponseState)
-                   , onChange $ \_ -> dispatchTodo $ TodoUpdate _todoResponseId $ TodoRequest _todoResponseTitle (flipTodoState _todoResponseState)
+                   , "type"      $= "checkbox"
+                   , "checked"   @= (Completed == _todoResponseState)
+                   , onChange    $ \_ -> dispatchTodo $ TodoUpdate _todoResponseId $ TodoRequest _todoResponseTitle (flipTodoState _todoResponseState)
                    ]
 
             label_ [ onDoubleClick $ \_ _ -> dispatchTodo $ TodoEdit _todoResponseId] $
@@ -253,9 +254,9 @@ todoFooter =
           a_ ["href" $= "#completed"] $ elemText "Completed"
 
       when (completed > 0) $ do
-          button_ [ "id" $= "clear-completed"
+          button_ [ "id"        $= "clear-completed"
                   , "className" $= "clear-completed"
-                  , onClick $ \_ _ -> dispatchTodo TodosClearCompleted
+                  , onClick     $ \_ _ -> dispatchTodo TodosClearCompleted
                   ] $
             elemString $ "Clear completed (" ++ show completed ++ ")"
 
