@@ -20,6 +20,7 @@ import           Data.Text                           (Text)
 import qualified Data.Text                           as Text
 import           Data.Typeable                       (Typeable)
 import           GHC.Generics                        (Generic)
+import           GHCJS.Router.Base                   (setLocationHash)
 import           React.Flux
 import           Safe                                (headMay)
 import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoParam (..),
@@ -28,7 +29,7 @@ import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoParam (..),
                                                       TodoResponses,
                                                       TodoState (..),
                                                       defaultTodoParam,
-                                                      flipTodoState,
+                                                      flipTodoState, todoParamToQueryParamsText,
                                                       todoResponseToRequest)
 
 
@@ -52,6 +53,8 @@ data TodoAction
   | Internal_AddTodo       (Maybe TodoResponse)
   | Internal_DeleteTodo    TodoId
   | Internal_AjaxError     Text
+  | Internal_SetTodoParam  TodoParam
+  | Internal_SetHash       Text
   deriving (Show, Typeable, Generic, NFData)
 
 
@@ -88,13 +91,16 @@ instance StoreData TodoStore where
       Internal_AddTodo m_todo     -> internal_add_todo m_todo
       Internal_DeleteTodo todo_id -> internal_delete_todo todo_id
       Internal_AjaxError _        -> pure st
+      Internal_SetTodoParam param -> internal_set_todo_param param
+      Internal_SetHash hash       -> internal_set_hash hash
 
     pure st'
 
     where
 
     action_todos_list = do
-      jsonAjax "GET" "/todos" [] () $ \case
+      let query_string = todoParamToQueryParamsText tsParam
+      jsonAjax "GET" ("/todos" <> query_string) [] () $ \case
         Left (_, msg) -> pure [SomeStoreAction todoStore $ Internal_AjaxError msg]
         Right todos   -> pure [SomeStoreAction todoStore $ Internal_SetTodos todos]
       pure st
@@ -148,6 +154,10 @@ instance StoreData TodoStore where
         Just todo@TodoResponse{..} -> pure $ st{tsTodos = Map.insert _todoResponseId todo tsTodos}
 
     internal_delete_todo todo_id = pure $ st{tsTodos = Map.delete todo_id tsTodos}
+
+    internal_set_todo_param param = pure $ st{tsParam = param}
+
+    internal_set_hash hash = (setLocationHash $ Text.unpack hash) *> pure st
 
 
 

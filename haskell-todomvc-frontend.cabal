@@ -19,11 +19,13 @@ library
                        Web.TodoMVC.Frontend.ReactFlux.Main
                        Web.TodoMVC.Frontend.ReactFlux.TodoComponent
                        Web.TodoMVC.Frontend.ReactFlux.TodoDispatcher
+                       Web.TodoMVC.Frontend.ReactFlux.TodoRouter
                        Web.TodoMVC.Frontend.ReactFlux.TodoStore
                        Web.TodoMVC.Frontend.ReactFlux.TodoView
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , deepseq
+                     , ghcjs-router
                      , haskell-todomvc-backend
                      , react-flux == 1.1.1
                      , react-flux-router
