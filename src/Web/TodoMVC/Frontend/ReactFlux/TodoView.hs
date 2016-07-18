@@ -81,7 +81,7 @@ todoHeader =
     $ \() -> -- (props -> ReactElementM ViewEventHandler ())
              -- (() -> ReactElementM ViewEventHandler ())
     header_ ["id" $= "header", "className" $= "header"] $ do
-        h1_ "todos"
+        h1_ "Todos"
         todoTextInput_  TextInputArgs
           { tiaId          = Just "new-todo"
           , tiaClass       = "new-todo"
@@ -122,7 +122,7 @@ todoHeader_ =
 --
 mainSection_ :: TodoStore -> ReactElementM ViewEventHandler ()
 mainSection_ TodoStore{..} =
-  section_ ["id" $= "main", "className" $= "todoapp"] $ do
+  section_ ["id" $= "main", "className" $= "main"] $ do
     labeledInput_ "toggle-all" "Mark all as complete"
       [ "type"      $= "checkbox"
       , "className" $= "toggle-all"
