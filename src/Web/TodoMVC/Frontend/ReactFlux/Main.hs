@@ -4,7 +4,9 @@ module Web.TodoMVC.Frontend.ReactFlux.Main (
 
 
 
+import           Data.Monoid                              ((<>))
 import           React.Flux
+import           React.Flux.Router.WebRoutes              (initRouter)
 import           Web.TodoMVC.Frontend.ReactFlux.TodoStore
 import           Web.TodoMVC.Frontend.ReactFlux.TodoView
 
@@ -29,5 +31,9 @@ reactFluxMain = do
     ()        -- props
               -- ()
               --
+
+  initRouter $ \segments -> do
+    putStrLn $ "segments: " <> show segments
+
   executeAction $
     SomeStoreAction todoStore TodosList -- SomeStoreAction

@@ -30,6 +30,7 @@ library
                      , safe
                      , text
                      , transformers
+                     , web-routes
   if impl(ghcjs)
     build-depends:     ghcjs-base
   ghc-options:         -Wall

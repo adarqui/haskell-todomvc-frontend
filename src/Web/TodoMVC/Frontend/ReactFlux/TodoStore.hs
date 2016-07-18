@@ -22,18 +22,20 @@ import           Data.Typeable                       (Typeable)
 import           GHC.Generics                        (Generic)
 import           React.Flux
 import           Safe                                (headMay)
-import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoRequest (..),
+import           Web.TodoMVC.Backend.Pure.Todo.Types (TodoId, TodoParam (..),
+                                                      TodoRequest (..),
                                                       TodoResponse (..),
                                                       TodoResponses,
                                                       TodoState (..),
+                                                      defaultTodoParam,
                                                       flipTodoState,
                                                       todoResponseToRequest)
 
 
 
 data TodoStore = TodoStore {
-  tsTodos       :: !(Map TodoId TodoResponse),
-  tsCurrentTodo :: !(Maybe TodoId)
+  tsTodos :: !(Map TodoId TodoResponse),
+  tsParam :: !TodoParam
 } deriving (Show, Generic, Typeable, NFData)
 
 
@@ -160,4 +162,4 @@ instance StoreData TodoStore where
 -- mkStore :: StoreData storeData => storeData -> ReactStore storeData
 --
 todoStore :: ReactStore TodoStore
-todoStore = mkStore $ TodoStore Map.empty Nothing
+todoStore = mkStore $ TodoStore Map.empty defaultTodoParam
