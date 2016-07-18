@@ -47,7 +47,7 @@ todoApp =
                         -- ReactStore TodoStore
     $ \todoState () ->  -- (storeData -> props -> ReactElementM ViewHandler ())
                         -- (TodoStore -> () -> ReactElementM ViewHandler ())
-      div_ $ do
+      section_ ["id" $= "todoapp", "className" $= "todoapp"] $ do
         todoHeader_             -- ReactElementM eventHandler ()
         mainSection_ todoState  -- TodoStore -> ReactElementM eventHandler ()
         todoFooter_ todoState   -- TodoStore -> ReactElementM eventHandler ()
